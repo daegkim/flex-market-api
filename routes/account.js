@@ -20,8 +20,6 @@ router.post('/login', function(req, res, next) {
     reason: "고객센터에 문의하세요."
   };
 
-  console.log(userId, userPwd);
-
   if(userId === null || userId === undefined || userId === ''
   || userPwd === null || userPwd === undefined || userPwd === ''){
     result.reason = "ID나 비밀번호를 입력하세요.";
@@ -70,7 +68,7 @@ router.post('/create', function(req, res, next) {
   }
   else {
     crypto.pbkdf2(userPwd, userId, 921118, 64, "sha512", (err, derivedKey) => {
-      if(err !== null || err !== undefined){
+      if(err){
         console.log(err);
         res.send(result);
         return;
