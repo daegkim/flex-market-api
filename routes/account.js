@@ -17,7 +17,8 @@ router.post('/login', function(req, res, next) {
   var userPwd = req.body.userPwd;
   var result = {
     isSuccess: false,
-    reason: "고객센터에 문의하세요."
+    reason: "고객센터에 문의하세요.",
+    userInfo: null
   };
 
   if(userId === null || userId === undefined || userId === ''
@@ -38,9 +39,18 @@ router.post('/login', function(req, res, next) {
           result.isSuccess = false;
           result.reason = "no account";
         }
+        else if(_result.length > 1){
+          result.isSuccess = false;
+          result.reason = "duplicate account";
+        }
         else{
           result.isSuccess = true;
           result.reason = null;
+          result.userInfo = {
+            userName: _result[0].userName,
+            point: _result[0].point,
+            favoriteProductId: _result[0].favoriteProductId
+          }
         }
         res.send(result);
       })
