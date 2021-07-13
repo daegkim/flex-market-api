@@ -9,7 +9,7 @@
     - quantity
     - image
     - categoryId
-    - eventId
+    - eventId(미적용)
   - category
     - categoryId
     - categoryName
@@ -18,7 +18,13 @@
     - userName
     - userPwd
     - point
-  - event
+  - accountChangeHist
+    - userId
+    - actId
+    - prevData
+    - changeData
+    - changeDate
+  - event(미적용)
     - eventId
     - eventName
     - discountRate
@@ -174,7 +180,6 @@
   }
   ])
   ~~~
-
 - category
   ~~~JSON
   db.category.insert([
@@ -204,3 +209,28 @@
   }
   ])
   ~~~
+- account
+  ~~~JSON
+  db.account.insert([
+    {
+      userId: "dgsoul",
+      userPwd: "9071eb2305a2eb8b1525f48e19713701482436465738239c5a2f3cee20a08f47e4d1699522fe036aff2bcd1f246c43c23d9f32a2248ed5e5468a143e4e4d15bd",
+      userName: "daegeunKim",
+      point: 0
+    }
+  ])
+- accountChangeHist
+  ~~~JSON
+  db.accountChangeHist.insert([
+    {
+      userId: "dgsoul",
+      actId: "CREATE_ACCOUNT",
+      prevData: {},
+      changeData: {
+        userId: "dgsoul",
+        userPwd: "9071eb2305a2eb8b1525f48e19713701482436465738239c5a2f3cee20a08f47e4d1699522fe036aff2bcd1f246c43c23d9f32a2248ed5e5468a143e4e4d15bd",
+        userName: "daegeunKim",
+        point: 0
+      }
+    }
+  ])

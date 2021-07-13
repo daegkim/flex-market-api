@@ -47,6 +47,7 @@ router.post('/login', function(req, res, next) {
           result.isSuccess = true;
           result.reason = null;
           result.userInfo = {
+            userId: _result[0].userId,
             userName: _result[0].userName,
             point: _result[0].point,
             favoriteProductId: _result[0].favoriteProductId
@@ -59,6 +60,31 @@ router.post('/login', function(req, res, next) {
         res.send(result);
       });
     });
+  }
+});
+
+router.post('/changeAccount', async function(req, res, next) {
+  var userId = req.body.userId;
+  var changeData = req.body.changeData;
+  var result = {
+    isSuccess: false,
+    reason: "고객센터에 문의하세요."
+  };
+
+  if(changeData === undefined || changeData === null){
+    result.reason = "변경하려는 값이 입력되지 않았습니다.";
+    res.send(result);
+  }
+  else{
+    if(userId === undefined || userId === null){
+      result.reason = "변경하려는 값이 입력되지 않았습니다.";
+      res.send(result);
+    }
+    else{
+      result.isSuccess = await account.changeAccount(userId, changeData);
+      result.reason = null;
+      res.send(result);
+    }
   }
 });
 
