@@ -38,7 +38,7 @@ accountSchema.statics.changeAccount = async function(userId, changeData) {
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
-    const resultFindAccount = await this.findOne({userId: userId}).exec();
+    const resultFindAccount = await this.findOne({userId: userId});
     if(!resultFindAccount){
       throw error("userId 찾을 수 없음");
     }
@@ -46,18 +46,29 @@ accountSchema.statics.changeAccount = async function(userId, changeData) {
     var prevData = {}
     Object.keys(changeData).forEach((key) => {
       prevData[key] = resultFindAccount[key];
+      if(key === 'point'){
+        changeData[key] = prevData[key] + changeData[key];
+      }
     });
 
-    await this.update({userId: userId}, changeData, { session });
+    await this.updateOne({userId: userId}, changeData, { session });
     await accountChangeHist.createHist(userId, prevData, changeData, "CHANGE_VALUE");
+
     await session.commitTransaction();
+    const afterUserInfo = await this.findOne({userId: userId});
     session.endSession();
-    return true;
+    return {
+      isSuccess: true,
+      afterUserInfo: afterUserInfo
+    }
   }
   catch(err) {
     await session.abortTransaction();
     session.endSession();
-    return false;
+    return {
+      isSuccess: false,
+      afterUserInfo: null
+    }
   }
 }
 

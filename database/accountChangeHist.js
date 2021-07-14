@@ -1,6 +1,4 @@
 const mongoose = require('mongoose');
-const crypto = require('crypto');
-const { error } = require('console');
 
 const accountChangeHistSchema = new mongoose.Schema({
   userId: {type: String, require: true},

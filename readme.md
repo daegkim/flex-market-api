@@ -29,9 +29,7 @@
     - eventName
     - discountRate
     - pointRate
-# 2. API
-# 3. 기타
-## 1) query
+## 2) query
 - product
   ~~~JSON
   db.product.insert([
@@ -234,3 +232,13 @@
       }
     }
   ])
+## 3) MONGODB 사용
+### 명령어
+- mongod --dbpath /users/daegeun/data/db --replSet rs0
+  - db가 저장된 경로 지정
+  - 세션을 사용할 수 있도록 replSet 설정
+- rs.initiate()
+  - replSet초기화
+
+# 2. API
+

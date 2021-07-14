@@ -68,7 +68,8 @@ router.post('/changeAccount', async function(req, res, next) {
   var changeData = req.body.changeData;
   var result = {
     isSuccess: false,
-    reason: "고객센터에 문의하세요."
+    reason: "고객센터에 문의하세요.",
+    afterUserInfo: null
   };
 
   if(changeData === undefined || changeData === null){
@@ -81,8 +82,10 @@ router.post('/changeAccount', async function(req, res, next) {
       res.send(result);
     }
     else{
-      result.isSuccess = await account.changeAccount(userId, changeData);
+      const changeResult = await account.changeAccount(userId, changeData);
+      result.isSuccess = changeResult.isSuccess;
       result.reason = null;
+      result.afterUserInfo = changeResult.afterUserInfo;
       res.send(result);
     }
   }
