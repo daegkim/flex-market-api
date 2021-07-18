@@ -8,14 +8,14 @@ const accountChangeHistSchema = new mongoose.Schema({
   changeDate: {type: Date, require: true}
 }, { collection: "accountChangeHist", versionKey: false});
 
-accountChangeHistSchema.statics.createHist = function(userId, prevData, changeData, actId) {
-  return this.create({
+accountChangeHistSchema.statics.createHist = function(userId, prevData, changeData, actId, session) {
+  return this.create([{
     userId: userId,
     actId: actId,
     prevData: prevData,
     changeData: changeData,
     changeDate: new Date()
-  });
+  }], { session });
 }
 
 module.exports = mongoose.model('accountChangeHist', accountChangeHistSchema);

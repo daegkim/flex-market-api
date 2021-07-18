@@ -9,6 +9,7 @@ var mongoose = require('mongoose');
 var indexRouter = require('./routes/index');
 var productRouter = require('./routes/product');
 var accountRouter = require('./routes/account');
+var orderRouter = require('./routes/order');
 
 var app = express();
 
@@ -27,6 +28,7 @@ app.use(express.static(path.join(__dirname, 'images')));
 app.use('/', indexRouter);
 app.use('/product', productRouter);
 app.use('/account', accountRouter);
+app.use('/order', orderRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
