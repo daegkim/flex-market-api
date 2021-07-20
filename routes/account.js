@@ -83,58 +83,28 @@ router.post('/create', function (req, res, next) {
 });
 
 router.post('/changeAccount', async function (req, res, next) {
-  try {
-    var userId = req.body.userId;
-    var changeData = req.body.changeData;
-    var result = {
-      isSuccess: false,
-      reason: "고객센터에 문의하세요.",
-      afterUserInfo: null
-    };
-
-    if (changeData === undefined || changeData === null) {
-      result.reason = "변경하려는 값이 입력되지 않았습니다.";
-      res.send(result);
+  try{
+    const userId = req.body.userId;
+    const changeData = req.body.changeData;
+    const options = {
+      uri: 'http://localhost:3100/changeAccount',
+      method: 'post',
+      body: {
+        userId: userId,
+        changeData: changeData
+      },
+      json: true
     }
-    else {
-      if (userId === undefined || userId === null) {
-        result.reason = "변경하려는 값이 입력되지 않았습니다.";
-        res.send(result);
-      }
-      else {
-        const sessionId = await account.changeAccount(userId, changeData);
-        const commitResult = await account.commit(sessionId);
-        const afterUserInfo = await account.findAccount(userId);
 
-        result.isSuccess = commitResult.isSuccess;
-        result.afterUserInfo = {
-          userId: afterUserInfo[0].userId,
-          userName: afterUserInfo[0].userName,
-          point: afterUserInfo[0].point,
-          favoriteProductId: afterUserInfo[0].favoriteProductId
-        }
-        if(result.isSuccess){
-          result.reason = null;
-        }
-
-        res.send(result);
-      }
-    }
+    var changeDataResult = await request.post(options);
+    res.send(changeDataResult);
   }
-  catch (err) {
-    if(sessionId !== undefined || sessionId !== null){
-      const rollbackResult = await account.rollback(sessionId);
-    }
-    const afterUserInfo = await account.findAccount(userId);
-    result.isSuccess = rollbackResult.isSuccess;
-    result.afterUserInfo = {
-      userId: afterUserInfo[0].userId,
-      userName: afterUserInfo[0].userName,
-      point: afterUserInfo[0].point,
-      favoriteProductId: afterUserInfo[0].favoriteProductId
-    }
-
-    res.send(result);
+  catch(err) {
+    res.send({
+      isSuccess: false,
+      reason: 'Please contact the customer service center.',
+      afterUserInfo: null
+    })
   }
 });
 
