@@ -1,9 +1,87 @@
 const express = require('express');
 const crypto = require('crypto');
-const request = require('request-promise-native');
+const axios = require('axios');
 const account = require('../database/account');
+const apiCallOption = require('../api-call-option');
 
 var router = express.Router();
+
+/**
+ * 
+ * @param {string} userId 
+ * @param {string} userPwd 
+ * @returns {{isSuccess: boolean, reason: string, userInfo: {userId: string, userName: string, point: number, favoriteProductId: number[]}}}
+ */
+const loginPost = async function (userId, userPwd) {
+  const result = {
+    isSuccess: false,
+    reason: 'Please contact the customer service center.',
+    userInfo: null
+  }
+  try {
+    const callOptions = apiCallOption.accountApi.login(userId, userPwd);
+    const loginResult = await axios(callOptions);
+    const loginData = loginResult.data;
+    Object.keys(result).forEach((key) => {
+      result[key] = loginData[key];
+    })
+  }
+  catch (err) {
+    result.isSuccess = false;
+    result.reason = 'Please contact the customer service center.';
+    result.userInfo = null;
+  }
+  finally {
+    return result;
+  }
+}
+
+/**
+ * 
+ * @param {string} userId 
+ * @param {{point: number}} changeData 
+ * @returns {{isSuccess: boolean, reason: string}}
+ */
+const changePointPost = async function (userId, changeData) {
+  const result = {
+    isSuccess: false,
+    reason: 'Please contact the customer service center.',
+  }
+  const sessionId = -1;
+
+  try {
+    const callOptions = apiCallOption.accountApi.changePoint(userId, changeData);
+    const changeAccountResult = await axios(callOptions);
+    const changeAccountData = changeAccountResult.data;
+    sessionId = changeAccountData.sessionId;
+    result.isSuccess = changeAccountData.isSuccess;
+    result.reason = changeAccountData.reason;
+
+    // commit or rollback
+    if (result.isSuccess) {
+      const callCommitOptions = apiCallOption.accountApi.commit(userId, sessionId);
+      const commitAccountResult = await axios(callCommitOptions);
+      const commitAccountData = commitAccountResult.data;
+      result.userInfo = commitAccountData.userInfo
+      //fail to commit > err
+      if (!commitAccountData.isSuccess) {
+        throw new Error("fail to commit");
+      }
+    }
+    else {
+      const callRollbackOptions = apiCallOption.accountApi.rollback(sessionId);
+      await axios(callRollbackOptions);
+    }
+  }
+  catch (err) {
+    result.isSuccess = false;
+    result.reason = 'Please contact the customer service center.';
+    result.userInfo = null;
+  }
+  finally {
+    return result;
+  }
+}
 
 router.get('/login', function (req, res, next) {
   var result = {
@@ -15,28 +93,16 @@ router.get('/login', function (req, res, next) {
 });
 
 router.post('/login', async function (req, res, next) {
-  try{
+  var result = null;
+  try {
     const userId = req.body.userId;
     const userPwd = req.body.userPwd;
-    const options = {
-      uri: 'http://localhost:3100/login',
-      method: 'post',
-      body: {
-        userId: userId,
-        userPwd: userPwd
-      },
-      json: true
-    }
 
-    var loginResult = await request.post(options);
-    res.send(loginResult);
+    result = await loginPost(userId, userPwd);
+    res.send(result);
   }
-  catch(err) {
-    res.send({
-      isSuccess: false,
-      reason: 'Please contact the customer service center.',
-      userInfo: null
-    })
+  catch (err) {
+    next(err);
   }
 });
 
@@ -82,29 +148,17 @@ router.post('/create', function (req, res, next) {
   }
 });
 
-router.post('/changeAccount', async function (req, res, next) {
-  try{
+router.post('/change_point', async function (req, res, next) {
+  var result = null;
+  try {
     const userId = req.body.userId;
     const changeData = req.body.changeData;
-    const options = {
-      uri: 'http://localhost:3100/changeAccount',
-      method: 'post',
-      body: {
-        userId: userId,
-        changeData: changeData
-      },
-      json: true
-    }
 
-    var changeDataResult = await request.post(options);
-    res.send(changeDataResult);
+    result = await changePointPost(userId, changeData);
+    res.send(result);
   }
-  catch(err) {
-    res.send({
-      isSuccess: false,
-      reason: 'Please contact the customer service center.',
-      afterUserInfo: null
-    })
+  catch (err) {
+    next(err);
   }
 });
 
