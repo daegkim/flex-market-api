@@ -148,7 +148,7 @@ router.post('/create', function (req, res, next) {
   }
 });
 
-router.post('/change_point', async function (req, res, next) {
+router.post('/charge_point', async function (req, res, next) {
   var result = null;
   try {
     const userId = req.body.userId;
