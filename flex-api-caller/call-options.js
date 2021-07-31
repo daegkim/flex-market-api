@@ -1,5 +1,16 @@
 module.exports = {
   accountApi: {
+    getUserInfo: function (userId) {
+      var result = {
+        method: 'post',
+        url: 'http://localhost:3100/userInfo',
+        data: {
+          userId: userId
+        }
+      };
+
+      return result;
+    },
     login: function (userId, userPwd) {
       var result = {
         method: 'post',
@@ -24,24 +35,22 @@ module.exports = {
 
       return result;
     },
-    commit: function (userId, sessionId) {
+    commit: function (sessionId) {
       var result = {
         method: 'post',
         url: 'http://localhost:3100/commit_session',
         data: {
-          userId: userId,
           sessionId: sessionId
         }
       };
 
       return result;
     },
-    rollback: function (userId, sessionId) {
+    rollback: function (sessionId) {
       var result = {
         method: 'post',
         url: 'http://localhost:3100/rollback_session',
         data: {
-          userId: userId,
           sessionId: sessionId
         }
       };
@@ -50,36 +59,45 @@ module.exports = {
     }
   },
   orderApi: {
-    createOrder: function (userId, changeData) {
+    getOrders: function (userId) {
       var result = {
         method: 'post',
-        url: 'http://localhost:3100/change_point',
+        url: 'http://localhost:3200/orders',
         data: {
-          userId: userId,
-          changeData: changeData
+          userId: userId
         }
       };
 
       return result;
     },
-    commit: function (userId, sessionId) {
+    createOrder: function (userId, orderProduct) {
       var result = {
         method: 'post',
-        url: 'http://localhost:3100/commit_session',
+        url: 'http://localhost:3200/create_order',
         data: {
           userId: userId,
+          orderProduct: orderProduct
+        }
+      };
+
+      return result;
+    },
+    commit: function (sessionId) {
+      var result = {
+        method: 'post',
+        url: 'http://localhost:3200/commit_session',
+        data: {
           sessionId: sessionId
         }
       };
 
       return result;
     },
-    rollback: function (userId, sessionId) {
+    rollback: function (sessionId) {
       var result = {
         method: 'post',
-        url: 'http://localhost:3100/rollback_session',
+        url: 'http://localhost:3200/rollback_session',
         data: {
-          userId: userId,
           sessionId: sessionId
         }
       };

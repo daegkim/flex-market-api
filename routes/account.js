@@ -1,164 +1,79 @@
 const express = require('express');
-const crypto = require('crypto');
-const axios = require('axios');
-const account = require('../database/account');
-const apiCallOption = require('../api-call-option');
+const router = express.Router();
+const flexApiCaller = require('../flex-api-caller/flex-api-caller');
 
-var router = express.Router();
-
-/**
- * 
- * @param {string} userId 
- * @param {string} userPwd 
- * @returns {{isSuccess: boolean, reason: string, userInfo: {userId: string, userName: string, point: number, favoriteProductId: number[]}}}
- */
-const loginPost = async function (userId, userPwd) {
+router.post('/login', async function (req, res, next) {
   const result = {
     isSuccess: false,
     reason: 'Please contact the customer service center.',
     userInfo: null
   }
-  try {
-    const callOptions = apiCallOption.accountApi.login(userId, userPwd);
-    const loginResult = await axios(callOptions);
-    const loginData = loginResult.data;
-    Object.keys(result).forEach((key) => {
-      result[key] = loginData[key];
-    })
-  }
-  catch (err) {
-    result.isSuccess = false;
-    result.reason = 'Please contact the customer service center.';
-    result.userInfo = null;
-  }
-  finally {
-    return result;
-  }
-}
 
-/**
- * 
- * @param {string} userId 
- * @param {{point: number}} changeData 
- * @returns {{isSuccess: boolean, reason: string}}
- */
-const changePointPost = async function (userId, changeData) {
-  const result = {
-    isSuccess: false,
-    reason: 'Please contact the customer service center.',
-  }
-  const sessionId = -1;
-
-  try {
-    const callOptions = apiCallOption.accountApi.changePoint(userId, changeData);
-    const changeAccountResult = await axios(callOptions);
-    const changeAccountData = changeAccountResult.data;
-    sessionId = changeAccountData.sessionId;
-    result.isSuccess = changeAccountData.isSuccess;
-    result.reason = changeAccountData.reason;
-
-    // commit or rollback
-    if (result.isSuccess) {
-      const callCommitOptions = apiCallOption.accountApi.commit(userId, sessionId);
-      const commitAccountResult = await axios(callCommitOptions);
-      const commitAccountData = commitAccountResult.data;
-      result.userInfo = commitAccountData.userInfo
-      //fail to commit > err
-      if (!commitAccountData.isSuccess) {
-        throw new Error("fail to commit");
-      }
-    }
-    else {
-      const callRollbackOptions = apiCallOption.accountApi.rollback(sessionId);
-      await axios(callRollbackOptions);
-    }
-  }
-  catch (err) {
-    result.isSuccess = false;
-    result.reason = 'Please contact the customer service center.';
-    result.userInfo = null;
-  }
-  finally {
-    return result;
-  }
-}
-
-router.get('/login', function (req, res, next) {
-  var result = {
-    isSuccess: false,
-    reason: "고객센터에 문의하세요."
-  };
-
-  res.send(result);
-});
-
-router.post('/login', async function (req, res, next) {
-  var result = null;
   try {
     const userId = req.body.userId;
     const userPwd = req.body.userPwd;
-
-    result = await loginPost(userId, userPwd);
-    res.send(result);
+    const loginResult = await flexApiCaller.accountCaller.login(userId, userPwd);
+    Object.keys(result).forEach((key) => {
+      result[key] = loginResult[key];
+    });
   }
   catch (err) {
-    next(err);
+    result.isSuccess = false;
+    result.reason = 'Please contact the customer service center.';
+    result.userInfo = null;
+  }
+  finally {
+    res.send(result);
   }
 });
 
 router.post('/create', function (req, res, next) {
-  var userId = req.body.userId;
-  var userName = req.body.userName;
-  var userPwd = req.body.userPwd;
-  var result = {
-    isSuccess: false,
-    reason: "고객센터에 문의하세요."
-  };
-
-  if (userId === null || userId === undefined || userId === ''
-    || userPwd === null || userPwd === undefined || userPwd === '') {
-    result.reason = "ID나 비밀번호를 입력하세요.";
-    res.send(result);
-  }
-  else {
-    crypto.pbkdf2(userPwd, userId, 921118, 64, "sha512", (err, derivedKey) => {
-      if (err) {
-        console.log(err);
-        res.send(result);
-        return;
-      }
-
-      account.login(userId, derivedKey)
-        .then((_result) => {
-          if (_result === null || _result === undefined) {
-            result.isSuccess = false;
-            result.reason = "no account";
-          }
-          else {
-            result.isSuccess = true;
-            result.reason = null;
-          }
-          res.send(result);
-        })
-        .catch((reason) => {
-          console.log(reason);
-          res.send(result);
-        });
-    });
-  }
 });
 
 router.post('/charge_point', async function (req, res, next) {
-  var result = null;
+  const result = {
+    isSuccess: false,
+    reason: 'Please contact the customer service center.',
+    userInfo: null
+  }
+
   try {
     const userId = req.body.userId;
     const changeData = req.body.changeData;
 
-    result = await changePointPost(userId, changeData);
-    res.send(result);
+    const changePointResult = await flexApiCaller.accountCaller.changePointWithTran(userId, changeData);
+    //1. 포인트 변경 시도 성공 여부
+    if (changePointResult.isSuccess) {
+      const changePointCommitResult = await flexApiCaller.accountCaller.commitTran(changePointResult.sessionId);
+      //2. 포인트 변경 Commit 성공 여부
+      if (changePointCommitResult.isSuccess) {
+        const userInfoResult = await flexApiCaller.accountCaller.getUserInfo(userId);
+        //3. 사용자 정보 조회 성공 여부
+        if (userInfoResult.isSuccess) {
+          result.isSuccess = true;
+          result.reason = null;
+          result.userInfo = userInfoResult.userInfo;
+        }
+        else {
+          //3. 사용자 재조회 실패한 경우..
+        }
+      }
+      else {
+        //2. 포인트 변경 Commit 실패한 경우..
+      }
+    }
+    else {
+      //1. 포인트 변경 시도 실패한 경우..
+      await flexApiCaller.accountCaller.rollbackTran(changePointResult.sessionId);
+    }
   }
   catch (err) {
-    next(err);
+    result.isSuccess = false;
+    result.reason = 'Please contact the customer service center.';
+    result.userInfo = null;
+  }
+  finally {
+    res.send(result);
   }
 });
 
